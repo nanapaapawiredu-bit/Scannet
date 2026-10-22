@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ScanNet — Image to Word & PDF</title>
+<meta name="description" content="Scan documents or upload images, extract text, and export to Word or PDF.">
+<style>
+:root{--ink:#17233b;--muted:#66748b;--blue:#315cf5;--blue2:#eaf0ff;--line:#e3e8f2;--bg:#f5f7fc;--white:#fff;--green:#13835b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:16px 5vw;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:850;font-size:21px;letter-spacing:-.7px}.logo{width:36px;height:36px;border-radius:11px;background:var(--blue);display:grid;place-items:center;color:#fff}
+.pill{font-size:12px;color:#4257a9;background:var(--blue2);padding:6px 10px;border-radius:20px;font-weight:700}
+main{max-width:1100px;margin:34px auto;padding:0 20px 60px}.hero{text-align:center;margin:32px 0 30px}.eyebrow{color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:1.5px;font-size:11px}.hero h1{font-size:clamp(30px,5vw,47px);line-height:1.1;letter-spacing:-1.8px;margin:12px 0}.hero p{color:var(--muted);max-width:620px;margin:0 auto;font-size:16px}
+.layout{display:grid;grid-template-columns:minmax(0,1.03fr) minmax(0,1fr);gap:20px;align-items:start}.card{background:var(--white);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 8px 26px #263b6810}.card h2{font-size:17px;margin:0 0 5px;letter-spacing:-.3px}.sub{font-size:13px;color:var(--muted);margin:0 0 18px}
+.drop{border:1.5px dashed #b8c7ee;background:#f8faff;border-radius:15px;padding:26px 16px;text-align:center;transition:.2s}.drop.drag{background:#edf2ff;border-color:var(--blue)}.upload-icon{width:48px;height:48px;border-radius:15px;background:#e7edff;color:var(--blue);display:grid;place-items:center;margin:0 auto 12px;font-size:23px}.drop strong{display:block;font-size:15px}.drop p{color:var(--muted);font-size:12px;margin:5px 0 15px}
+.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:750;font-size:13px;cursor:pointer;display:inline-flex;justify-content:center;align-items:center;gap:7px;transition:.15s}.btn:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--blue);color:white}.primary:hover{background:#2449dc}.secondary{background:#eef2fa;color:#283751}.outline{background:#fff;border:1px solid var(--line);color:var(--ink)}.full{width:100%}.row{display:flex;gap:9px;flex-wrap:wrap}.divider{height:1px;background:var(--line);margin:20px 0}.file-list{display:grid;gap:8px;margin-top:12px}.file-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:9px}.thumb{width:43px;height:43px;object-fit:cover;border-radius:8px;background:#eef1f8}.file-meta{min-width:0;flex:1}.file-meta strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.file-meta small{color:var(--muted);font-size:11px}.remove{border:0;background:transparent;color:#9a5361;cursor:pointer;font-size:18px;padding:5px}
+.camera-box{display:none;margin-top:12px}.camera-box video{width:100%;max-height:340px;object-fit:contain;background:#111;border-radius:12px}.editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.status{font-size:11px;font-weight:800;color:var(--green);background:#e9f8f1;padding:5px 8px;border-radius:8px}.textarea{width:100%;min-height:330px;resize:vertical;border:1px solid var(--line);border-radius:13px;padding:15px;font:14px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;color:#26344d;outline:none}.textarea:focus{border-color:#8da4ff;box-shadow:0 0 0 3px #315cf51a}.progress-wrap{height:6px;background:#edf0f7;border-radius:8px;overflow:hidden;margin:13px 0 7px;display:none}.progress{height:100%;width:0;background:var(--blue);transition:width .2s}.message{font-size:12px;color:var(--muted);min-height:18px;margin:8px 0}.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.export{padding:13px;text-align:left;border:1px solid var(--line);border-radius:13px;background:white;cursor:pointer;display:flex;align-items:center;gap:10px}.export:hover{border-color:#a6b7ff;background:#f9faff}.export b{display:block;font-size:13px}.export small{display:block;color:var(--muted);font-size:11px}.filetype{width:36px;height:40px;border-radius:8px;display:grid;place-items:center;font-weight:900;font-size:11px}.pdf{background:#fff0f0;color:#cb3d48}.word{background:#eaf1ff;color:#2755cb}.hint{font-size:11px;color:var(--muted);margin-top:16px}.privacy{display:flex;gap:9px;align-items:flex-start;background:#f4fbf7;color:#3f705d;border-radius:11px;padding:11px;font-size:11px;margin-top:15px}.privacy span{font-size:16px}footer{text-align:center;color:#8994a8;font-size:11px;padding:20px}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.account-grid input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font:inherit}.account-grid .wide{grid-column:1/-1}.saved-list{display:grid;gap:8px;margin-top:10px}.saved-item{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px}.saved-item .saved-title{flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;font-weight:700}.saved-item button{font-size:11px;padding:8px}.config-note{background:#fff8e8;color:#73561a;padding:10px;border-radius:10px;font-size:12px;margin:10px 0}.account-status{font-size:12px;color:var(--muted);min-height:18px;margin-top:8px}@media(max-width:760px){.account-grid{grid-template-columns:1fr}.account-grid .wide{grid-column:auto}header{padding:13px 18px}.pill{display:none}main{margin:20px auto;padding:0 13px 35px}.hero{margin:27px 0 23px}.layout{grid-template-columns:1fr}.card{padding:17px}.textarea{min-height:250px}.hero p{font-size:14px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">✦</div>ScanNet</div><span class="pill">IMAGE → EDITABLE DOCUMENT</span></header>
+<main>
+<section class="hero"><div class="eyebrow">Your pocket document scanner</div><h1>From image to <span style="color:var(--blue)">editable text.</span></h1><p>Upload a photo or scan a page with your camera. Extract the words, make corrections, then download as a Word document or PDF.</p></section>
+<section class="card" style="margin-bottom:20px">
+<h2>ScanNet account & saved documents</h2><p class="sub">Create an account to save your edited text privately and reopen it later. Cloud saving activates after you connect your own free Supabase project.</p>
+<div class="config-note" id="configNote">Almost ready: your Supabase project URL is filled in. Before account features work, replace PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE in the setup section near the bottom of this HTML file with your Supabase publishable key (sb_publishable_...). Never use a service-role or secret key here.</div>
+<div class="account-grid">
+<input id="accountEmail" class="wide" type="email" placeholder="Email address" autocomplete="email">
+<input id="accountPassword" class="wide" type="password" placeholder="Password (at least 6 characters)" autocomplete="current-password">
+<button class="btn primary" id="signUpBtn">Create account</button><button class="btn secondary" id="signInBtn">Log in</button>
+<button class="btn outline wide" id="signOutBtn" style="display:none">Log out</button>
+</div><p class="account-status" id="accountStatus">Not connected yet. Image conversion and downloads work without an account.</p>
+<div id="savedSection" style="display:none"><div class="divider"></div><div class="editor-head"><h2>Your saved documents</h2><button class="btn outline" id="refreshSavedBtn">Refresh</button></div><div id="savedList" class="saved-list"></div></div>
+</section>
+<div class="layout">
+<section class="card">
+<h2>1. Add your pages</h2><p class="sub">Upload JPG, PNG, or WebP images, or use your device camera.</p>
+<div class="drop" id="drop">
+<div class="upload-icon">⇧</div><strong>Drop images here</strong><p>or choose files from your device</p>
+<input id="files" type="file" accept="image/*" multiple hidden>
+<button class="btn primary" id="choose">＋ Choose images</button>
+</div>
+<div class="row" style="margin-top:10px"><button class="btn secondary" id="cameraBtn">▣ Scan with camera</button><button class="btn outline" id="clearBtn">Clear all</button></div>
+<div class="camera-box" id="cameraBox"><video id="video" autoplay playsinline></video><div class="row" style="margin-top:8px"><button class="btn primary" id="captureBtn">◎ Capture page</button><button class="btn outline" id="stopCameraBtn">Stop camera</button></div><p class="message">Hold your page steady in good lighting. Camera access requires permission.</p></div>
+<div id="fileList" class="file-list"></div>
+<div class="divider"></div>
+<h2>2. Extract the text</h2><p class="sub">OCR reads the words in your image. Clear, straight photos work best.</p>
+<button class="btn primary full" id="ocrBtn" disabled>✦ Convert image to text</button>
+<div class="progress-wrap" id="progressWrap"><div class="progress" id="progress"></div></div><p class="message" id="status">Add one or more images to begin.</p>
+<div class="privacy"><span>♧</span><div><b>Privacy-minded processing</b><br>Images are processed in your browser using OCR. This demo does not upload your images to a server. External libraries load from a CDN.</div></div>
+</section>
+<section class="card">
+<div class="editor-head"><div><h2>3. Review your text</h2><p class="sub" style="margin:4px 0 0">Edit any mistakes before exporting.</p></div><span class="status" id="wordCount">0 words</span></div>
+<textarea id="resultText" class="textarea" placeholder="Your extracted text will appear here… You can also type or paste text into this box."></textarea>
+<div class="row" style="margin-top:10px"><button class="btn secondary" id="copyBtn">▣ Copy text</button><button class="btn outline" id="selectBtn">Select all</button><button class="btn primary" id="saveDocBtn">Save to my account</button></div><input id="docTitle" type="text" placeholder="Document title (optional)" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:10px">
+<div class="divider"></div><h2>4. Download your document</h2><p class="sub">Choose your preferred format.</p>
+<div class="export-grid">
+<button class="export" id="wordBtn"><span class="filetype word">DOCX</span><span><b>Word document</b><small>Editable .docx file</small></span></button>
+<button class="export" id="pdfBtn"><span class="filetype pdf">PDF</span><span><b>PDF document</b><small>Ready to print or share</small></span></button>
+</div><p class="hint">Note: OCR accuracy depends on image quality, handwriting, language, and lighting. Always review the extracted text. Multi-page exports preserve page order.</p>
+</section>
+</div>
+</main><footer>ScanNet · A simple image-to-document workspace</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let pages=[],stream=null;
+const fileInput=$('files'), drop=$('drop'), fileList=$('fileList'), ocrBtn=$('ocrBtn'), status=$('status'), textArea=$('resultText');
+function fmt(n){return n<1024?`${n} B`:n<1048576?`${(n/1024).toFixed(1)} KB`:`${(n/1048576).toFixed(1)} MB`}
+function addFiles(files){for(const file of files){if(!file.type.startsWith('image/'))continue;if(pages.some(p=>p.file.name===file.name&&p.file.size===file.size))continue;pages.push({file,url:URL.createObjectURL(file)});}renderFiles()}
+function renderFiles(){fileList.innerHTML='';pages.forEach((p,i)=>{const item=document.createElement('div');item.className='file-item';item.innerHTML=`<img class="thumb" src="${p.url}" alt=""><div class="file-meta"><strong></strong><small></small></div><button class="remove" aria-label="Remove image" title="Remove">×</button>`;item.querySelector('strong').textContent=p.file.name;item.querySelector('small').textContent=fmt(p.file.size);item.querySelector('button').onclick=()=>{URL.revokeObjectURL(p.url);pages.splice(i,1);renderFiles()};fileList.appendChild(item)});ocrBtn.disabled=!pages.length;status.textContent=pages.length?`${pages.length} image${pages.length===1?'':'s'} ready to process.`:'Add one or more images to begin.'}
+$('choose').onclick=()=>fileInput.click();fileInput.onchange=e=>{addFiles(e.target.files);fileInput.value=''};
+$('clearBtn').onclick=()=>{pages.forEach(p=>URL.revokeObjectURL(p.url));pages=[];renderFiles()};
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+function updateCount(){const words=textArea.value.trim()?textArea.value.trim().split(/\s+/).length:0;$('wordCount').textContent=`${words} word${words===1?'':'s'}`}
+textArea.addEventListener('input',updateCount);
+$('ocrBtn').onclick=async()=>{if(!pages.length)return;if(!window.Tesseract){status.textContent='OCR library could not load. Check your internet connection and refresh.';return}ocrBtn.disabled=true;$('progressWrap').style.display='block';let all=[];try{const worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status){status.textContent=m.status+(m.progress!=null?` · ${Math.round(m.progress*100)}%`:'');if(m.progress!=null)$('progress').style.width=`${Math.round(m.progress*100)}%`}}});for(let i=0;i<pages.length;i++){status.textContent=`Reading image ${i+1} of ${pages.length}…`;const r=await worker.recognize(pages[i].file);all.push(r.data.text.trim());$('progress').style.width=`${Math.round((i+1)/pages.length*100)}%`}await worker.terminate();textArea.value=[textArea.value.trim(),...all].filter(Boolean).join('\n\n');updateCount();status.textContent='Text extraction complete. Review the result before downloading.'}catch(e){status.textContent='Could not read the image. Try a clearer image or refresh the page.';console.error(e)}finally{ocrBtn.disabled=!pages.length}}
+$('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(textArea.value);status.textContent='Text copied to clipboard.'}catch(e){textArea.select();document.execCommand('copy');status.textContent='Text selected/copied if clipboard permission is available.'}};
+$('selectBtn').onclick=()=>{textArea.focus();textArea.select()};
+$('wordBtn').onclick=async()=>{if(!textArea.value.trim()){status.textContent='Add or extract some text first.';return}if(!window.docx){status.textContent='Word export library did not load. Check your connection.';return}try{const {Document,Packer,Paragraph}=docx;const paragraphs=textArea.value.split(/\n/).map(line=>new Paragraph({text:line}));const doc=new Document({sections:[{properties:{},children:paragraphs}]});const blob=await Packer.toBlob(doc);download(blob,'scannet-document.docx');status.textContent='Word document downloaded.'}catch(e){console.error(e);status.textContent='Word export failed. Please try again.'}};
+$('pdfBtn').onclick=()=>{if(!textArea.value.trim()){status.textContent='Add or extract some text first.';return}if(!window.jspdf){status.textContent='PDF export library did not load. Check your connection.';return}try{const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4'});const lines=pdf.splitTextToSize(textArea.value,180);let y=18;for(const line of lines){if(y>280){pdf.addPage();y=18}pdf.text(line,15,y);y+=7}pdf.save('scannet-document.pdf');status.textContent='PDF document downloaded.'}catch(e){console.error(e);status.textContent='PDF export failed. Please try again.'}};
+function download(blob,name){const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('cameraBtn').onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});$('video').srcObject=stream;$('cameraBox').style.display='block';status.textContent='Camera ready. Capture each page you want to scan.'}catch(e){status.textContent='Camera unavailable or permission denied. Use Choose images instead.'}};
+$('stopCameraBtn').onclick=stopCamera;function stopCamera(){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('cameraBox').style.display='none'}
+$('captureBtn').onclick=()=>{const v=$('video');if(!v.videoWidth){status.textContent='Camera is not ready yet.';return}const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);c.toBlob(blob=>{const f=new File([blob],`scan-${pages.length+1}.jpg`,{type:'image/jpeg'});addFiles([f]);status.textContent='Page captured. Capture another page or extract text.'},'image/jpeg',.92)};
+
+// ===== ScanNet cloud account setup =====
+// Paste the Project URL and anon/public key from Supabase > Project Settings > API.
+// The anon key is designed for browser use when Row Level Security is enabled.
+// NEVER use a Supabase service_role/secret key here.
+const SUPABASE_URL = 'https://zdnjhxreircmrvngbjck.supabase.co';
+const SUPABASE_ANON_KEY = 'PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE';
+let sb = null, currentUser = null;
+const accountStatus = $('accountStatus');
+const configNote = $('configNote');
+const isSupabaseConfigured = () => window.supabase && SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('PASTE_') && !SUPABASE_ANON_KEY.includes('PASTE_');
+function setAccountStatus(message){ accountStatus.textContent = message; }
+function friendlyError(error){ return error?.message || 'Something went wrong. Please try again.'; }
+async function refreshSavedDocs(){
+  if(!sb || !currentUser) return;
+  const list=$('savedList'); list.innerHTML='Loading saved documents…';
+  const {data,error}=await sb.from('documents').select('id,title,content,created_at,updated_at').order('updated_at',{ascending:false}).limit(50);
+  if(error){list.textContent='Could not load documents: '+friendlyError(error);return;}
+  list.innerHTML='';
+  if(!data.length){list.textContent='No saved documents yet. Convert or type some text, then choose “Save to my account”.';return;}
+  data.forEach(doc=>{
+    const item=document.createElement('div'); item.className='saved-item';
+    const title=document.createElement('div');title.className='saved-title';title.textContent=doc.title||'Untitled document';
+    const open=document.createElement('button');open.className='btn secondary';open.textContent='Open';open.onclick=()=>{textArea.value=doc.content||'';$('docTitle').value=doc.title||'';updateCount();setAccountStatus('Opened “'+(doc.title||'Untitled document')+'”.');window.scrollTo({top:document.querySelector('.layout').offsetTop-20,behavior:'smooth'});};
+    const del=document.createElement('button');del.className='btn outline';del.textContent='Delete';del.onclick=async()=>{if(!confirm('Delete this saved document? This cannot be undone.'))return;const {error}=await sb.from('documents').delete().eq('id',doc.id);if(error){setAccountStatus('Delete failed: '+friendlyError(error));return;}setAccountStatus('Document deleted.');refreshSavedDocs();};
+    item.append(title,open,del);list.appendChild(item);
+  });
+}
+function updateAccountUI(){
+  $('signOutBtn').style.display=currentUser?'inline-flex':'none';
+  $('signUpBtn').style.display=currentUser?'none':'inline-flex'; $('signInBtn').style.display=currentUser?'none':'inline-flex';
+  $('savedSection').style.display=currentUser?'block':'none';
+  $('saveDocBtn').disabled=!currentUser;
+  if(currentUser){configNote.style.display='none';setAccountStatus('Signed in as '+currentUser.email+'. Your saved text is private to your account.');refreshSavedDocs();}
+  else if(isSupabaseConfigured()){configNote.style.display='none';setAccountStatus('Not signed in. Log in or create an account to save documents.');}
+}
+if(isSupabaseConfigured()){
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  sb.auth.getSession().then(({data})=>{currentUser=data.session?.user||null;updateAccountUI();});
+  sb.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;updateAccountUI();});
+}else{
+  $('saveDocBtn').disabled=true;
+  configNote.style.display='block';
+}
+$('signUpBtn').onclick=async()=>{
+  if(!sb){setAccountStatus('First configure the Supabase URL and anon key in this file.');return;}
+  const email=$('accountEmail').value.trim(),password=$('accountPassword').value;
+  if(!email||password.length<6){setAccountStatus('Enter a valid email and a password with at least 6 characters.');return;}
+  setAccountStatus('Creating account…');const {data,error}=await sb.auth.signUp({email,password});
+  if(error){setAccountStatus(friendlyError(error));return;}
+  if(data.session){currentUser=data.user;updateAccountUI();setAccountStatus('Account created and signed in.');}
+  else setAccountStatus('Account created. Check your email for the confirmation link, then log in.');
+};
+$('signInBtn').onclick=async()=>{
+  if(!sb){setAccountStatus('First configure the Supabase URL and anon key in this file.');return;}
+  const email=$('accountEmail').value.trim(),password=$('accountPassword').value;
+  if(!email||!password){setAccountStatus('Enter your email and password.');return;}
+  setAccountStatus('Logging in…');const {data,error}=await sb.auth.signInWithPassword({email,password});
+  if(error){setAccountStatus(friendlyError(error));return;}currentUser=data.user;updateAccountUI();
+};
+$('signOutBtn').onclick=async()=>{if(!sb)return;const {error}=await sb.auth.signOut();if(error){setAccountStatus(friendlyError(error));return;}currentUser=null;updateAccountUI();setAccountStatus('You are logged out.');};
+$('saveDocBtn').onclick=async()=>{
+  if(!sb){setAccountStatus('Cloud saving is not configured yet. Follow the setup note above.');return;}
+  if(!currentUser){setAccountStatus('Log in first to save a document.');return;}
+  const content=textArea.value.trim();if(!content){setAccountStatus('There is no text to save yet.');return;}
+  const title=$('docTitle').value.trim()||('ScanNet document '+new Date().toLocaleDateString());
+  $('saveDocBtn').disabled=true;setAccountStatus('Saving document…');
+  const {error}=await sb.from('documents').insert({user_id:currentUser.id,title,content});
+  $('saveDocBtn').disabled=false;
+  if(error){setAccountStatus('Save failed: '+friendlyError(error));return;}
+  setAccountStatus('Document saved privately to your account.');refreshSavedDocs();
+};
+$('refreshSavedBtn').onclick=refreshSavedDocs;
+
+renderFiles();
+</script>
+</body></html>
