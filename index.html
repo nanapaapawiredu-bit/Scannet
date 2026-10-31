@@ -115,7 +115,7 @@ async function refreshSavedDocs(){
     const item=document.createElement('div'); item.className='saved-item';
     const title=document.createElement('div');title.className='saved-title';title.textContent=doc.title||'Untitled document';
     const open=document.createElement('button');open.className='btn secondary';open.textContent='Open';open.onclick=()=>{textArea.value=doc.content||'';$('docTitle').value=doc.title||'';updateCount();setAccountStatus('Opened “'+(doc.title||'Untitled document')+'”.');window.scrollTo({top:document.querySelector('.layout').offsetTop-20,behavior:'smooth'});};
-    const del=document.createElement('button');del.className='btn outline';del.textContent='Delete';del.onclick=async()=>{if(!confirm('Delete this saved document? This cannot be undone.'))return;const {error}=await sb.from('documents').delete().eq('id',doc.id);if(error){setAccountStatus('Delete failed: '+friendlyError(error));return;}setAccountStatus('Document deleted.');refreshSavedDocs();};
+    const del=document.createElement('button');del.className='btn outline';del.textContent='Delete';del.onclick=async()=>{if(!confirm('Delete this saved document and its stored images? This cannot be undone.'))return;const meta=await sb.from('document_images').select('storage_path').eq('document_id',String(doc.id));if(!meta.error&&meta.data.length){const paths=meta.data.map(x=>x.storage_path);const removed=await sb.storage.from('scannet-images').remove(paths);if(removed.error){setAccountStatus('Could not remove attached images: '+friendlyError(removed.error));return;}await sb.from('document_images').delete().eq('document_id',String(doc.id));}const {error}=await sb.from('documents').delete().eq('id',doc.id);if(error){setAccountStatus('Delete failed: '+friendlyError(error));return;}setAccountStatus('Document and attached images deleted.');refreshSavedDocs();};
     item.append(title,open,del);list.appendChild(item);
   });
 }
@@ -157,6 +157,10 @@ $('saveDocBtn').onclick=async()=>{
   if(!currentUser){setAccountStatus('Log in first to save a document.');return;}
   const content=textArea.value.trim();if(!content){setAccountStatus('There is no text to save yet.');return;}
   const title=$('docTitle').value.trim()||('ScanNet document '+new Date().toLocaleDateString());
+  const count=await sb.from('documents').select('id',{count:'exact',head:true});
+  if(count.error){setAccountStatus('Could not check your free account limit: '+friendlyError(count.error));return;}
+  if((count.count||0)>=10){setAccountStatus('Your free account has reached 10 saved documents. Delete an older document to make space. ScanNet Pro will be introduced after secure payments are ready.');return;}
+  if(pages.length>10){setAccountStatus('Please save no more than 10 images with one document in this beta version.');return;}
   $('saveDocBtn').disabled=true;setAccountStatus('Saving document…');
   const {data,error}=await sb.from('documents').insert({user_id:currentUser.id,title,content}).select('id').single();
   if(error){$('saveDocBtn').disabled=false;setAccountStatus('Save failed: '+friendlyError(error));return;}
