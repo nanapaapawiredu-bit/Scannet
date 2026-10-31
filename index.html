@@ -79,7 +79,8 @@ $('clearBtn').onclick=()=>{pages.forEach(p=>URL.revokeObjectURL(p.url));pages=[]
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
 drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
-function prepareOCRImage(file,handwriting){return new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const scale=handwriting?2:1.5;const canvas=document.createElement("canvas");canvas.width=Math.min(4200,Math.round(img.width*scale));canvas.height=Math.min(5600,Math.round(img.height*scale));const ctx=canvas.getContext("2d");ctx.filter=handwriting?"grayscale(1) contrast(1.35) brightness(1.04)":"grayscale(1) contrast(1.12)";ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{URL.revokeObjectURL(url);blob?resolve(blob):reject(new Error("Image preparation failed"));},"image/png");};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Image could not be read"));};img.src=url;});}\nfunction safeFileName(name){return name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)||"document";}\nfunction updateCount(){const words=textArea.value.trim()?textArea.value.trim().split(/\s+/).length:0;$('wordCount').textContent=`${words} word${words===1?'':'s'}`}
+function prepareOCRImage(file,handwriting){return new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const scale=handwriting?2:1.5;const canvas=document.createElement("canvas");canvas.width=Math.min(4200,Math.round(img.width*scale));canvas.height=Math.min(5600,Math.round(img.height*scale));const ctx=canvas.getContext("2d");ctx.filter=handwriting?"grayscale(1) contrast(1.35) brightness(1.04)":"grayscale(1) contrast(1.12)";ctx.drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{URL.revokeObjectURL(url);blob?resolve(blob):reject(new Error("Image preparation failed"));},"image/png");};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Image could not be read"));};img.src=url;});}
+function safeFileName(name){return name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)||"document";}\nfunction updateCount(){const words=textArea.value.trim()?textArea.value.trim().split(/\s+/).length:0;$('wordCount').textContent=`${words} word${words===1?'':'s'}`}
 textArea.addEventListener('input',updateCount);
 $('ocrBtn').onclick=async()=>{if(!pages.length)return;if(!window.Tesseract){status.textContent='OCR library could not load. Check your internet connection and refresh.';return}ocrBtn.disabled=true;$('progressWrap').style.display='block';let all=[];try{const worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status){status.textContent=m.status+(m.progress!=null?` · ${Math.round(m.progress*100)}%`:'');if(m.progress!=null)$('progress').style.width=`${Math.round(m.progress*100)}%`}}});for(let i=0;i<pages.length;i++){status.textContent=`Reading image ${i+1} of ${pages.length}…`;const prepared=await prepareOCRImage(pages[i].file,$("ocrMode").value==="handwriting");const r=await worker.recognize(prepared);all.push(r.data.text.trim());$('progress').style.width=`${Math.round((i+1)/pages.length*100)}%`}await worker.terminate();textArea.value=[textArea.value.trim(),...all].filter(Boolean).join('\n\n');updateCount();status.textContent='Text extraction complete. Review the result before downloading.'}catch(e){status.textContent='Could not read the image. Try a clearer image or refresh the page.';console.error(e)}finally{ocrBtn.disabled=!pages.length}}
 $('copyBtn').onclick=async()=>{try{await navigator.clipboard.writeText(textArea.value);status.textContent='Text copied to clipboard.'}catch(e){textArea.select();document.execCommand('copy');status.textContent='Text selected/copied if clipboard permission is available.'}};
@@ -152,15 +153,24 @@ $('signInBtn').onclick=async()=>{
 };
 $('signOutBtn').onclick=async()=>{if(!sb)return;const {error}=await sb.auth.signOut();if(error){setAccountStatus(friendlyError(error));return;}currentUser=null;updateAccountUI();setAccountStatus('You are logged out.');};
 $('saveDocBtn').onclick=async()=>{
-  if(!sb){setAccountStatus('Cloud saving is not configured yet. Follow the setup note above.');return;}
+  if(!sb){setAccountStatus('Cloud saving is not configured yet.');return;}
   if(!currentUser){setAccountStatus('Log in first to save a document.');return;}
   const content=textArea.value.trim();if(!content){setAccountStatus('There is no text to save yet.');return;}
   const title=$('docTitle').value.trim()||('ScanNet document '+new Date().toLocaleDateString());
   $('saveDocBtn').disabled=true;setAccountStatus('Saving document…');
-  const {error}=await sb.from('documents').insert({user_id:currentUser.id,title,content});
+  const {data,error}=await sb.from('documents').insert({user_id:currentUser.id,title,content}).select('id').single();
+  if(error){$('saveDocBtn').disabled=false;setAccountStatus('Save failed: '+friendlyError(error));return;}
+  let failed=0;
+  for(const page of pages){
+    const path=currentUser.id+'/'+data.id+'/'+Date.now()+'-'+safeFileName(page.file.name);
+    const uploaded=await sb.storage.from('scannet-images').upload(path,page.file,{upsert:false,contentType:page.file.type||'image/jpeg'});
+    if(uploaded.error){failed++;continue;}
+    const meta=await sb.from('document_images').insert({user_id:currentUser.id,document_id:String(data.id),storage_path:path,original_name:page.file.name});
+    if(meta.error){failed++;await sb.storage.from('scannet-images').remove([path]);}
+  }
   $('saveDocBtn').disabled=false;
-  if(error){setAccountStatus('Save failed: '+friendlyError(error));return;}
-  setAccountStatus('Document saved privately to your account.');refreshSavedDocs();
+  setAccountStatus(failed?'Text saved, but '+failed+' image(s) could not be stored. Run the ScanNet storage migration and try again.':'Document saved privately'+(pages.length?' with '+pages.length+' image(s).':'.'));
+  refreshSavedDocs();
 };
 $('refreshSavedBtn').onclick=refreshSavedDocs;
 
